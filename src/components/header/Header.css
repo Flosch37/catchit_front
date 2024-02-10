@@ -1,4 +1,5 @@
-.header {
+/* Style de base pour la barre de navigation */
+nav {
     background-color: #333;
     color: white;
     padding: 10px;
@@ -7,29 +8,23 @@
     align-items: center;
 }
 
-.header-brand a {
-    color: white;
-    text-decoration: none;
-    font-size: 24px;
-    font-weight: bold;
-}
-
-.header-nav ul {
+/* Style pour les liens de la barre de navigation */
+nav ul {
     list-style-type: none;
     padding: 0;
     margin: 0;
     display: flex;
 }
 
-.header-nav ul li {
+nav ul li {
     margin: 0 10px;
 }
 
-.header-nav ul li a {
+nav ul li a {
     color: white;
     text-decoration: none;
 }
 
-.header-nav ul li a:hover {
+nav ul li a:hover {
     text-decoration: underline;
 }

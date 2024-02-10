@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import './Register.css'
 
 function Register() {
     const [username, setUsername] = useState('');
@@ -35,11 +36,10 @@ function Register() {
             setError('Une erreur est survenue lors de la connexion au serveur.');
         }
     };
-
     return (
-        <div>
-            {error && <div style={{ color: 'red' }}>{error}</div>}
-            <form onSubmit={handleSubmit}>
+        <div className="register-container">
+            {error && <div className="error-message">{error}</div>}
+            <form onSubmit={handleSubmit} className="register-form">
                 <input
                     type="text"
                     value={username}

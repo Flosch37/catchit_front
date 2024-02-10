@@ -1,18 +1,31 @@
+import React from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext'; // Ajustez selon votre structure de fichiers
+import './Header.css'
+
+
 function Header() {
-    const isLoggedIn = localStorage.getItem('token') ? true : false;
+    console.log("Header is rendering");
+    const { logout } = useAuth(); // Assurez-vous que votre contexte d'authentification fournit une fonction de logout
+    const navigate = useNavigate();
+
+    const handleLogout = () => {
+        logout(); // Efface le token et met à jour l'état d'authentification
+        navigate('/login'); // Redirige vers la page de connexion
+    };
+
+    const isLoggedIn = localStorage.getItem('token') ? true : false; // Ou utilisez un état d'authentification global via useAuth
 
     return (
         <nav>
-            {/* Autres liens */}
             <ul>
-                {!isLoggedIn && (
+                {!isLoggedIn ? (
                     <>
-                        <li><a href="/login">Connexion</a></li>
-                        <li><a href="/register">Inscription</a></li>
+                        <li><Link to="/login">Connexion</Link></li>
+                        <li><Link to="/register">Inscription</Link></li>
                     </>
-                )}
-                {isLoggedIn && (
-                    <li><a href="/logout">Déconnexion</a></li>
+                ) : (
+                    <li><a href="/logout" onClick={handleLogout}>Déconnexion</a></li> // Utilisez <button> ou <Link> avec onClick pour une meilleure pratique
                 )}
             </ul>
         </nav>
