@@ -1,0 +1,24 @@
+.homepage {
+    padding: 20px;
+}
+
+h1{
+    margin-bottom: 2.5rem;
+}
+
+.top-collections {
+    margin-top: 20px;
+}
+
+.collections-list {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+}
+
+.collection-item {
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
