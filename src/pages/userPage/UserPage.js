@@ -1,53 +1,109 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 import './UserPage.css';
+
+function CollectionForm({ onCollectionCreated }) {
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const token = localStorage.getItem('token');
+        try {
+            await axios.post(`http://localhost:3000/collection/add`,
+                { name, description, isAdmin: false, userId: jwtDecode(token).userId },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            onCollectionCreated();
+        } catch (error) {
+            console.error("There was an error creating the collection: ", error);
+        }
+    };
+    
+
+    return (
+        <form onSubmit={handleSubmit}>
+            <label>
+                Nom:
+                <input type="text" value={name} onChange={(e) => setName(e.target.value)} required />
+            </label>
+            <label>
+                Description:
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
+            </label>
+            <button type="submit">Créer</button>
+        </form>
+    );
+}
 
 function UserPage() {
     const [userCollections, setUserCollections] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [showForm, setShowForm] = useState(false);
 
     useEffect(() => {
-        fetchUserCollections();
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                fetchUserCollections(decoded.userId);
+            } catch (error) {
+                console.error("Error decoding token: ", error);
+                setError('Failed to authenticate user.');
+                setLoading(false);
+            }
+        } else {
+            setError('No authentication token found.');
+            setLoading(false);
+        }
     }, []);
 
-    const fetchUserCollections = () => {
+    const fetchUserCollections = (userId) => {
         setLoading(true);
-        axios.get('http://localhost:3000/collection/users', {
+        axios.get(`http://localhost:3000/collection/collections/user/${userId}`, {
             headers: {
-                Authorization: `Bearer ${localStorage.getItem('accessToken')}` // Assuming you store the access token in localStorage
+                Authorization: `Bearer ${localStorage.getItem('token')}`
             }
         })
-            .then(response => {
-                setUserCollections(response.data);
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error("There was an error fetching the user collections: ", error);
-                setError('There was an error loading the user collections.');
-                setLoading(false);
-            });
-    };
-
-    const deleteCollection = (id) => {
-        axios.delete(`http://localhost:3000/collection/${id}`, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('accessToken')}`
-            }
+        .then(response => {
+            setUserCollections(response.data);
+            setLoading(false);
         })
-            .then(() => {
-                fetchUserCollections();
-            })
-            .catch(error => {
-                console.error("There was an error deleting the collection: ", error);
-            });
+        .catch(error => {
+            console.error("There was an error fetching the collections: ", error);
+            setError('There was an error loading the collections.');
+            setLoading(false);
+        });
     };
 
+    const handleCollectionCreated = () => {
+        setShowForm(false);
+        fetchUserCollections();
+    };
+
+    // Cette fonction semble être appelée mais n'est pas définie. Voici un exemple de définition :
     const navigateToForm = (collectionId) => {
-        // Vous implémenteriez ici la logique de navigation, éventuellement en utilisant useHistory de react-router-dom
-        // Par exemple : history.push(`/collections/edit/${collectionId}`);
-        console.log(`Navigate to form for collection: ${collectionId || 'new'}`);
+        console.log(`Navigate to form for collection ID: ${collectionId}`);
+        // Ici, vous pouvez ajouter la logique pour naviguer vers le formulaire de modification de la collection
     };
+
+    const deleteCollection = (collectionId) => {
+        axios.delete(`http://localhost:3000/collection/${collectionId}`, {
+            headers: {
+                Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+        })
+        .then(response => {
+            console.log("Delete de la collection avec l'id :" + collectionId + " réussi, réponse :", response);
+        })
+        .catch(error => {
+            console.error("There was an error fetching the collections: ", error);
+            setError('There was an error loading the collections.');
+        });
+    };
+
 
     if (loading) return <div>Loading...</div>;
     if (error) return <div>{error}</div>;
@@ -55,7 +111,11 @@ function UserPage() {
     return (
         <div className="user-page">
             <h1>Bienvenue sur CatchIt</h1>
-            <button onClick={() => navigateToForm()}>Créer une nouvelle collection</button>
+            {showForm ? (
+                <CollectionForm onCollectionCreated={handleCollectionCreated} />
+            ) : (
+                <button onClick={() => setShowForm(true)}>Créer une nouvelle collection</button>
+            )}
             <div className="my-collections">
                 <h2>Mes Collections</h2>
                 {userCollections.length === 0 ? (
