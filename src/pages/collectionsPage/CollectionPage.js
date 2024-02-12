@@ -1,19 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import axios from 'axios';
-import { jwtDecode } from 'jwt-decode'; // Assurez-vous que cette importation fonctionne correctement
 import './CollectionPage.css';
 
 
-function ObjectForm({ initialState, onFormSubmit, buttonText }) {
+function ItemForm({ initialState, onFormSubmit, buttonText }) {
   const [name, setName] = useState(initialState?.name || '');
   const [description, setDescription] = useState(initialState?.description || '');
   const [imagePath, setImagePath] = useState(initialState?.imagePath || '');
-  const [isReal, setIsReal] = useState(initialState?.isReal || false);
+  const [isReal, setIsReal] = useState(initialState?.isReal || 0);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    onFormSubmit({ name, description, imagePath, isReal });
+    onFormSubmit({ name, description, imagePath, isReal});
   };
 
   return (
@@ -35,7 +34,7 @@ function ObjectForm({ initialState, onFormSubmit, buttonText }) {
         <input 
           type="checkbox" 
           checked={isReal} 
-          onChange={(e) => setIsReal(e.target.checked)} 
+          onChange={(e) => setIsReal(e.target.checked ? 1 : 0)} 
         />
       </label>
       <button type="submit">{buttonText}</button>
@@ -44,11 +43,12 @@ function ObjectForm({ initialState, onFormSubmit, buttonText }) {
 }
 
 function CollectionPage(){
-  const [collectionObjects, setCollectionObjects] = useState([]);
+  const [collectionItems, setCollectionItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [editingObject, setEditingObject] = useState(null);
+  const [editingItem, setEditingItem] = useState(null);
+  const [currentItemId, setCurrentItemId] = useState(null);
 
   const { collectionId } = useParams();
 
@@ -56,8 +56,7 @@ function CollectionPage(){
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const decoded = jwtDecode(token);
-        fetchObjectsCollection(collectionId); //TODO
+        fetchItemsCollection(collectionId); //TODO
       } catch (error) {
         console.error("Error decoding token: ", error);
         setError('Failed to authenticate user.');
@@ -70,13 +69,13 @@ function CollectionPage(){
   }, []);
 
   // OK
-  const fetchObjectsCollection = (collectionId) => {
+  const fetchItemsCollection = (collectionId) => {
     setLoading(true);
-    axios.get(`http://localhost:3000/api/objects/all/${collectionId}`, {
+    axios.get(`http://localhost:3000/api/items/all/${collectionId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(response => {
-      setCollectionObjects(response.data);
+      setCollectionItems(response.data);
       setLoading(false);
     })
     .catch(error => {
@@ -88,22 +87,22 @@ function CollectionPage(){
 
   const handleCollectionCreatedOrUpdated = () => {
     setShowForm(false);
-    setEditingObject(null);
-    fetchObjectsCollection(collectionId);
+    setEditingItem(null);
+    fetchItemsCollection(collectionId);
   };
 
-  const onFormSubmit = async ({ name, description, imagePath, isReal }) => {
+  const onFormSubmit = async ({ name, description, imagePath, isReal}) => {
     const token = localStorage.getItem('token');
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      if (editingObject) {
-        await axios.put(`http://localhost:3000/api/objects/${collectionId}`,
-          { collectionId, description, imagePath, isReal },
+      if (editingItem) {
+        await axios.put(`http://localhost:3000/api/items/${currentItemId}`,
+          { collectionId, name, description, image_path: imagePath, is_real: isReal},
           { headers }
         );
       } else {
-        await axios.post(`http://localhost:3000/api/objects/add`,
-        { name, description, isAdmin: false, userId: jwtDecode(token).userId },
+        await axios.post(`http://localhost:3000/api/items/add`,
+        { name, description, image_path: imagePath, is_real: isReal, collectionId},
         { headers: { Authorization: `Bearer ${token}` } }
     );
       }
@@ -113,20 +112,21 @@ function CollectionPage(){
     }
   };
 
-  const handleEditClick = (collectionId) => {
-    const collection = collectionObjects.find(c => c.id === collectionId);
+  const handleEditClick = (itemId) => {
+    const collection = collectionItems.find(c => c.id === itemId);
     if (collection) {
-      setEditingObject(collection);
+      setEditingItem(collection);
+      setCurrentItemId(itemId);
       setShowForm(true);
     }
   };
 
-  const deleteObject = (objectId) => {
-    axios.delete(`http://localhost:3000/api/objects/${objectId}`, {
+  const deleteItem = (ItemId) => {
+    axios.delete(`http://localhost:3000/api/items/${ItemId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(() => {
-      fetchObjectsCollection(collectionId);
+      fetchItemsCollection(collectionId);
     })
     .catch(error => {
       console.error("There was an error deleting the collection: ", error);
@@ -142,28 +142,28 @@ function CollectionPage(){
     <div className="collection-page">
       <h1>Bienvenue sur CatchIt</h1>
       {showForm ? (
-        <ObjectForm
-          initialState={editingObject || { name: '', description: '', imagePath: '', isReal: false }}
+        <ItemForm
+          initialState={editingItem || { name: '', description: '', imagePath: '', isReal: 0 }}
           onFormSubmit={onFormSubmit}
-          buttonText={editingObject ? 'Modifier' : 'Créer'}
+          buttonText={editingItem ? 'Modifier' : 'Créer'}
         />
       ) : (
         <button onClick={() => setShowForm(true)}>Créer un nouvel objet</button>
       )}
-      <div className="my-objects">
+      <div className="my-Items">
         <h2>Mes Objets de la collection</h2>
-        {collectionObjects.length === 0 ? (
+        {collectionItems.length === 0 ? (
           <p>Vous n'avez d'objet dans votre collection pour le moment.</p>
         ) : (
           <div className="collections-list">
-            {setCollectionObjects.map(object => (
-              <div key={object.id} className="collection-item">
-                <h3>{object.name}</h3>
-                <p>{object.description}</p>
-                <p>{object.imagePath}</p>
-                <p>{object.isReal ? "Réel" : "Non réel"}</p>
-                <button onClick={() => handleEditClick(collectionId)}>Modifier</button>
-                <button onClick={() => deleteObject(collectionId)}>Supprimer</button>
+            {collectionItems.map(Item => (
+              <div key={Item.id} className="collection-item">
+                <h3>{Item.name}</h3>
+                <p>{Item.description}</p>
+                <p>{Item.image_path}</p>
+                <p>{Item.is_real ? "Réel" : "Non réel"}</p>
+                <button onClick={() => handleEditClick(Item.id)}>Modifier</button>
+                <button onClick={() => deleteItem(Item.id)}>Supprimer</button>
               </div>
             ))}
           </div>
