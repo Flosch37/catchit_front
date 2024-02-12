@@ -1,16 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode'; // Assurez-vous que cette importation fonctionne correctement
-import './UserPage.css';
+import './CollectionPage.css';
 
-function CollectionForm({ initialState, onFormSubmit, buttonText }) {
+
+function ObjectForm({ initialState, onFormSubmit, buttonText }) {
   const [name, setName] = useState(initialState?.name || '');
   const [description, setDescription] = useState(initialState?.description || '');
+  const [imagePath, setImagePath] = useState(initialState?.imagePath || '');
+  const [isReal, setIsReal] = useState(initialState?.isReal || false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    onFormSubmit({ name, description });
+    onFormSubmit({ name, description, imagePath, isReal });
   };
 
   return (
@@ -23,24 +26,38 @@ function CollectionForm({ initialState, onFormSubmit, buttonText }) {
         Description:
         <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
       </label>
+      <label>
+        imagePath:
+        <textarea value={imagePath} onChange={(e) => setImagePath(e.target.value)} />
+      </label>
+      <label>
+        isReal:
+        <input 
+          type="checkbox" 
+          checked={isReal} 
+          onChange={(e) => setIsReal(e.target.checked)} 
+        />
+      </label>
       <button type="submit">{buttonText}</button>
     </form>
   );
 }
 
-function UserPage() {
-  const [userCollections, setUserCollections] = useState([]);
+function CollectionPage(){
+  const [collectionObjects, setCollectionObjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [editingCollection, setEditingCollection] = useState(null);
-  const navigate = useNavigate();
+  const [editingObject, setEditingObject] = useState(null);
+
+  const { collectionId } = useParams();
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        fetchUserCollections(decoded.userId);
+        fetchObjectsCollection(collectionId); //TODO
       } catch (error) {
         console.error("Error decoding token: ", error);
         setError('Failed to authenticate user.');
@@ -52,13 +69,14 @@ function UserPage() {
     }
   }, []);
 
-  const fetchUserCollections = (userId) => {
+  // OK
+  const fetchObjectsCollection = (collectionId) => {
     setLoading(true);
-    axios.get(`http://localhost:3000/collection/collections/user/${userId}`, {
+    axios.get(`http://localhost:3000/api/objects/all/${collectionId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(response => {
-      setUserCollections(response.data);
+      setCollectionObjects(response.data);
       setLoading(false);
     })
     .catch(error => {
@@ -70,21 +88,21 @@ function UserPage() {
 
   const handleCollectionCreatedOrUpdated = () => {
     setShowForm(false);
-    setEditingCollection(null);
-    fetchUserCollections(jwtDecode(localStorage.getItem('token')).userId);
+    setEditingObject(null);
+    fetchObjectsCollection(collectionId);
   };
 
-  const onFormSubmit = async ({ name, description }) => {
+  const onFormSubmit = async ({ name, description, imagePath, isReal }) => {
     const token = localStorage.getItem('token');
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      if (editingCollection) {
-        await axios.put(`http://localhost:3000/collection/${editingCollection.id}`,
-          { name, description },
+      if (editingObject) {
+        await axios.put(`http://localhost:3000/api/objects/${collectionId}`,
+          { collectionId, description, imagePath, isReal },
           { headers }
         );
       } else {
-        await axios.post(`http://localhost:3000/collection/add`,
+        await axios.post(`http://localhost:3000/api/objects/add`,
         { name, description, isAdmin: false, userId: jwtDecode(token).userId },
         { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -96,57 +114,56 @@ function UserPage() {
   };
 
   const handleEditClick = (collectionId) => {
-    const collection = userCollections.find(c => c.id === collectionId);
+    const collection = collectionObjects.find(c => c.id === collectionId);
     if (collection) {
-      setEditingCollection(collection);
+      setEditingObject(collection);
       setShowForm(true);
     }
   };
 
-  const deleteCollection = (collectionId) => {
-    axios.delete(`http://localhost:3000/collection/${collectionId}`, {
+  const deleteObject = (objectId) => {
+    axios.delete(`http://localhost:3000/api/objects/${objectId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(() => {
-      fetchUserCollections(jwtDecode(localStorage.getItem('token')).userId);
+      fetchObjectsCollection(collectionId);
     })
     .catch(error => {
       console.error("There was an error deleting the collection: ", error);
     });
   };
 
-  const handleNaviguate = (collectionId) => {
-    navigate(`/collectionPage/${collectionId}`);
-  }
-
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
+  //OK
+
   return (
-    <div className="user-page">
+    <div className="collection-page">
       <h1>Bienvenue sur CatchIt</h1>
       {showForm ? (
-        <CollectionForm
-          initialState={editingCollection || { name: '', description: '' }}
+        <ObjectForm
+          initialState={editingObject || { name: '', description: '', imagePath: '', isReal: false }}
           onFormSubmit={onFormSubmit}
-          buttonText={editingCollection ? 'Modifier' : 'Créer'}
+          buttonText={editingObject ? 'Modifier' : 'Créer'}
         />
       ) : (
-        <button onClick={() => setShowForm(true)}>Créer une nouvelle collection</button>
+        <button onClick={() => setShowForm(true)}>Créer un nouvel objet</button>
       )}
-      <div className="my-collections">
-        <h2>Mes Collections</h2>
-        {userCollections.length === 0 ? (
-          <p>Vous n'avez pas créé de collection pour le moment.</p>
+      <div className="my-objects">
+        <h2>Mes Objets de la collection</h2>
+        {collectionObjects.length === 0 ? (
+          <p>Vous n'avez d'objet dans votre collection pour le moment.</p>
         ) : (
           <div className="collections-list">
-            {userCollections.map(collection => (
-              <div key={collection.id} className="collection-item">
-                <h3>{collection.name}</h3>
-                <p>{collection.description}</p>
-                <button onClick={() => handleNaviguate(collection.id)}>Voir la collection</button>
-                <button onClick={() => handleEditClick(collection.id)}>Modifier</button>
-                <button onClick={() => deleteCollection(collection.id)}>Supprimer</button>
+            {setCollectionObjects.map(object => (
+              <div key={object.id} className="collection-item">
+                <h3>{object.name}</h3>
+                <p>{object.description}</p>
+                <p>{object.imagePath}</p>
+                <p>{object.isReal ? "Réel" : "Non réel"}</p>
+                <button onClick={() => handleEditClick(collectionId)}>Modifier</button>
+                <button onClick={() => deleteObject(collectionId)}>Supprimer</button>
               </div>
             ))}
           </div>
@@ -156,4 +173,4 @@ function UserPage() {
   );
 }
 
-export default UserPage;
+export default CollectionPage;
