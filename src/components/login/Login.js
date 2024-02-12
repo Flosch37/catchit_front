@@ -12,9 +12,8 @@ function Login() {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    // useEffect mis à jour pour inclure un log affichant la valeur mise à jour de userRole
     useEffect(() => {
-        console.log("UserRole Updated:", userRole); // Pour confirmer que userRole est mis à jour
+        console.log("UserRole Updated:", userRole); 
         if (userRole === 'admin') {
             navigate('/adminPage');
             console.log('jojo');
@@ -43,15 +42,14 @@ function Login() {
             }
         
             const data = await response.json();
-            login(data.token, { username }); // Suppose que cette fonction gère également le stockage du token
+            login(data.token, { username }); 
         
-            // Ajustement ici pour extraire le rôle selon la structure de la réponse
-            const role = data.role; // Directement puisque 'role' est à la racine de l'objet réponse
+            const role = data.role; 
         
             if (role) {
                 setUserRole(role);
             } else {
-                console.log("Le rôle n'a pas été trouvé dans la réponse:", data); // Pour le débogage
+                console.log("Le rôle n'a pas été trouvé dans la réponse:", data); 
                 setError('Impossible de déterminer le rôle de l\'utilisateur.');
             }
         } catch (error) {

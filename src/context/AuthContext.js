@@ -11,7 +11,6 @@ export const AuthProvider = ({ children }) => {
     const [currentUser, setCurrentUser] = useState(null);
 
     useEffect(() => {
-        // Tente de récupérer le token et les données utilisateur au démarrage de l'application
         const token = localStorage.getItem('token');
         const user = localStorage.getItem('user');
         if (token && user) {
@@ -20,15 +19,15 @@ export const AuthProvider = ({ children }) => {
     }, []);
 
     const login = (token, userData) => {
-        localStorage.setItem('token', token); // Stockage du token JWT dans localStorage
-        localStorage.setItem('user', JSON.stringify(userData)); // Stockage des données utilisateur
-        setCurrentUser(userData); // Mise à jour de l'état de l'utilisateur actuel
+        localStorage.setItem('token', token); 
+        localStorage.setItem('user', JSON.stringify(userData)); 
+        setCurrentUser(userData); 
     };
 
     const logout = () => {
-        localStorage.removeItem('token'); // Suppression du token JWT de localStorage
-        localStorage.removeItem('user'); // Suppression des données utilisateur
-        setCurrentUser(null); // Réinitialisation de l'état de l'utilisateur actuel
+        localStorage.removeItem('token'); 
+        localStorage.removeItem('user'); 
+        setCurrentUser(null); 
     };
 
     const value = {
