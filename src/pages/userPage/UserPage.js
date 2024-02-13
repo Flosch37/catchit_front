@@ -54,7 +54,7 @@ function UserPage() {
 
   const fetchUserCollections = (userId) => {
     setLoading(true);
-    axios.get(`http://localhost:3000/collection/collections/user/${userId}`, {
+    axios.get(`http://localhost:3000/api/collection/collections/user/${userId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(response => {
@@ -79,12 +79,12 @@ function UserPage() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       if (editingCollection) {
-        await axios.put(`http://localhost:3000/collection/${editingCollection.id}`,
+        await axios.put(`http://localhost:3000/api/collection/${editingCollection.id}`,
           { name, description },
           { headers }
         );
       } else {
-        await axios.post(`http://localhost:3000/collection/add`,
+        await axios.post(`http://localhost:3000/api/collection/add`,
         { name, description, isAdmin: false, userId: jwtDecode(token).userId },
         { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -104,7 +104,7 @@ function UserPage() {
   };
 
   const deleteCollection = (collectionId) => {
-    axios.delete(`http://localhost:3000/collection/${collectionId}`, {
+    axios.delete(`http://localhost:3000/api/collection/${collectionId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
     })
     .then(() => {
@@ -115,8 +115,8 @@ function UserPage() {
     });
   };
 
-  const handleNaviguate = (collectionId) => {
-    navigate(`/collectionPage/${collectionId}`);
+  const handleNaviguate = (collectionName, collectionId) => {
+    navigate(`/collectionPage/${collectionName}/${collectionId}`);
   }
 
   if (loading) return <div>Loading...</div>;
@@ -144,7 +144,7 @@ function UserPage() {
               <div key={collection.id} className="collection-item">
                 <h3>{collection.name}</h3>
                 <p>{collection.description}</p>
-                <button onClick={() => handleNaviguate(collection.id)}>Voir la collection</button>
+                <button onClick={() => handleNaviguate(collection.name, collection.id)}>Voir la collection</button>
                 <button onClick={() => handleEditClick(collection.id)}>Modifier</button>
                 <button onClick={() => deleteCollection(collection.id)}>Supprimer</button>
               </div>

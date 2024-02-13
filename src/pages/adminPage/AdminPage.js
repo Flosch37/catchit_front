@@ -1,14 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import GenericForm from './genericForm/GenericForm';
+import entityFields from './genericForm/entityFields';
 import './AdminPage.css';
 
 function AdminPage() {
     const [bddItems, setbddItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentTable, setCurrentTable] = useState('collection');
+    const [currentEditingId, setCurrentEditingId] = useState(null);
+    const [isEditing, setIsEditing] = useState(false)
     const [error, setError] = useState(null);
 
+    //Formulaire
+    const [formInitialState, setFormInitialState] = useState({});
+    const [showForm, setShowForm] = useState(false);
+
     useEffect(() => {
-        axios.get('http://localhost:3000/collection') 
+        axios.get('http://localhost:3000/api/collection/all') 
             .then(response => {
                 setbddItems(response.data); // Correction ici
                 setLoading(false);
@@ -28,32 +37,84 @@ function AdminPage() {
         return <div>There was an error loading the collections.</div>;
     }
 
-    const fetchAllCollection = () => {
-        axios.get('http://localhost:3000/collection') 
-            .then(response => {
-                setbddItems(response.data); // Correction ici
-                setLoading(false);
-            })
-            .catch(error => {
-                console.error("There was an error fetching the collections!", error);
-                setError(error);
-                setLoading(false);
-            });
-    }
+    const handleAddClick = (entityType) => {
+        setIsEditing(false);
+        setCurrentTable(entityType);
+        setFormInitialState({});
+        setShowForm(!showForm);
+    };
+
+    const handleEditClick = (paramCurrentTable, id, data) => {
+        setCurrentEditingId(id);
+        setIsEditing(true);
+        setCurrentTable(paramCurrentTable);
+        setFormInitialState({...data}); 
+        setShowForm(!showForm);
+    };
+
+    const handleFormSubmit = async (data) => {
+        // Utilise `currentTable` pour savoir quelle API appeler
+
+
+        let endpoint = 'add';
+        if(currentTable === 'users'){
+            endpoint = 'register';
+        }
+
+        if(isEditing){
+            endpoint = currentEditingId
+            const url = `http://localhost:3000/api/${currentTable}/${endpoint}`;
+            try {
+                await axios.put(url, data, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                });
+                // Rafraîchir les données affichées si nécessaire
+                if(currentTable === "items"){
+                    fetchItemsByCollectionId(currentTable);
+                } else {
+                    fetchAllData(currentTable)
+                }
+                setShowForm(false);
+                setCurrentEditingId(null);
+
+            } catch (error) {
+                console.error("There was an error submitting the form: ", error);
+            }
+            
+        } else {
+            // Par exemple :
+            const url = `http://localhost:3000/api/${currentTable}/${endpoint}`;
+            try {
+                await axios.post(url, data, {
+                    headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                });
+                // Rafraîchir les données affichées si nécessaire
+                if(currentTable === "items"){
+                    fetchItemsByCollectionId(currentTable);
+                } else {
+                    fetchAllData(currentTable)
+                }
+            } catch (error) {
+                console.error("There was an error submitting the form: ", error);
+            }
+        }
+    };
 
     const fetchItemsByCollectionId = (collectionId) => {
         axios.get(`http://localhost:3000/api/items/all/${collectionId}`)
             .then(response => {
                 setbddItems(response.data);
+                setCurrentTable('items')
             })
             .catch(error => {
                 console.error("There was an error fetching the items!", error);
             });
     };
 
-    const fetchAllUsers = () => {
-        axios.get('http://localhost:3000/api/users/all') 
+    const fetchAllData = (param) => {
+        axios.get(`http://localhost:3000/api/${param}/all`) 
             .then(response => {
+                setCurrentTable(param);
                 setbddItems(response.data); // Correction ici
                 setLoading(false);
             })
@@ -64,19 +125,15 @@ function AdminPage() {
             });
     }
 
-    const fetchAllReview = () => {
-        //TODO
-    }
-
-    const createUser = (newUser) => {
-        axios.post('http://localhost:3000/api/users/register', newUser, {
+    const deleteData = (param,id) => {
+        axios.delete(`http://localhost:3000/api/${param}/${id}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         })
         .then(() => {
-            fetchAllUsers(); 
+            fetchAllData('collection');
         })
         .catch(error => {
-            console.error("There was an error adding the user: ", error);
+            console.error("There was an error deleting the collection: ", error);
         });
     };
 
@@ -85,7 +142,7 @@ function AdminPage() {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         })
         .then(() => {
-            fetchAllUsers(); // Actualiser la liste après la mise à jour
+            fetchAllData('users'); // Actualiser la liste après la mise à jour
         })
         .catch(error => {
             console.error("There was an error updating the user: ", error);
@@ -93,30 +150,29 @@ function AdminPage() {
     };
     
     
-    
+
     
 
-    const deleteItem = (id) => {
-        axios.delete(`http://localhost:3000/collection/${id}`, {
-            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        })
-        .then(() => {
-            fetchAllCollection();
-        })
-        .catch(error => {
-            console.error("There was an error deleting the collection: ", error);
-        });
-    };
-
-    const handleEditClick = (id) => {
-        // Ta logique pour éditer un élément
-    };
+    
 
     return (
         <div className="admin-page">
             <h1>Admin CatchIt</h1>
-            <button onClick={() => fetchAllCollection()}>Revenir aux collections</button>
-            <button onClick={() => fetchAllUsers()}>Revenir aux users</button>
+            {
+                showForm && 
+                <GenericForm 
+                    initialState={formInitialState} 
+                    onFormSubmit={handleFormSubmit} // Tu devras définir cette fonction
+                    buttonText="Soumettre" 
+                    fields={entityFields[currentTable]} 
+                />
+
+                
+            }
+            <button onClick={() => handleAddClick(currentTable)}>Afficher/masquer formulaire</button>
+            <button onClick={() => fetchAllData('collection')}>Revenir aux collections</button>
+            <button onClick={() => fetchAllData('users')}>Revenir aux users</button>
+            <button onClick={() => fetchAllData('reviews')}>Revenir aux reviews</button>
             {bddItems.map((Item, index) => (
               <div key={index} className="admin-items">
                 {Object.entries(Item).map(([key, value]) => (
@@ -125,8 +181,8 @@ function AdminPage() {
                 {('isAdmin' in Item) && ( 
                     <button onClick={() => fetchItemsByCollectionId(Item.id)}>Afficher les items</button>
                 )}
-                <button onClick={() => handleEditClick(Item.id)}>Modifier</button>
-                <button onClick={() => deleteItem(Item.id)}>Supprimer</button>
+                <button onClick={() => handleEditClick(currentTable, Item.id, Item)}>Modifier</button>
+                <button onClick={() => deleteData(currentTable, Item.id)}>Supprimer</button>
               </div>
             ))}
         </div>

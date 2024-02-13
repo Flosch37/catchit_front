@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate} from 'react-router-dom';
 import axios from 'axios';
 import './CollectionPage.css';
+
 
 
 function ItemForm({ initialState, onFormSubmit, buttonText }) {
@@ -49,8 +50,9 @@ function CollectionPage(){
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [currentItemId, setCurrentItemId] = useState(null);
+  const navigate = useNavigate();
 
-  const { collectionId } = useParams();
+  const { collectionId, collectionName } = useParams();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -133,6 +135,10 @@ function CollectionPage(){
     });
   };
 
+  const handleNaviguate = (itemName, itemId) => {
+    navigate(`/avisPage/${itemName}/${itemId}`);
+  }
+
   if (loading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -140,7 +146,7 @@ function CollectionPage(){
 
   return (
     <div className="collection-page">
-      <h1>Bienvenue sur CatchIt</h1>
+      <h1>Collection : {`${collectionName}`}</h1>
       {showForm ? (
         <ItemForm
           initialState={editingItem || { name: '', description: '', imagePath: '', isReal: 0 }}
@@ -164,6 +170,8 @@ function CollectionPage(){
                 <p>{Item.is_real ? "Réel" : "Non réel"}</p>
                 <button onClick={() => handleEditClick(Item.id)}>Modifier</button>
                 <button onClick={() => deleteItem(Item.id)}>Supprimer</button>
+                <button onClick={() => handleNaviguate(Item.name, Item.id)}>Voir les avis</button>
+
               </div>
             ))}
           </div>

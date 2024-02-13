@@ -8,7 +8,7 @@ function HomePage() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        axios.get('http://localhost:3000/collection') 
+        axios.get('http://localhost:3000/api/collection/all') 
             .then(response => {
                 setLatestCollections(response.data);
                 setLoading(false);
