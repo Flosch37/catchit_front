@@ -22,7 +22,7 @@ export default function GenericForm({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form className="generic-form" onSubmit={handleSubmit}>
       {fields.map((field) => (
         <label key={field.name}>
           {field.label}:

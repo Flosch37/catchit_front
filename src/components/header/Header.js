@@ -3,13 +3,13 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext'; 
 import './Header.css'
 
-
 function Header() {
     console.log("Header is rendering");
     const { logout } = useAuth(); 
     const navigate = useNavigate();
 
-    const handleLogout = () => {
+    const handleLogout = (e) => {
+        e.preventDefault(); // Pour empêcher le rechargement de la page
         logout(); 
         navigate('/login');
     };
@@ -25,7 +25,10 @@ function Header() {
                         <li><Link to="/register">Inscription</Link></li>
                     </>
                 ) : (
-                    <li><a href="/logout" onClick={handleLogout}>Déconnexion</a></li> 
+                    <>
+                        <li><Link to="/research-collections-others">Recherche Collections</Link></li> {/* Ajout du lien vers ResearchCollectionsOthers */}
+                        <li><a href="/logout" onClick={handleLogout}>Déconnexion</a></li> 
+                    </>
                 )}
             </ul>
         </nav>

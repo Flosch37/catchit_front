@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate} from 'react-router-dom';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode'; 
 import './CollectionPage.css';
 
 
@@ -48,16 +49,24 @@ function CollectionPage(){
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
+  const [collectionUserId, setCollectionUserId] = useState(-1);
   const [editingItem, setEditingItem] = useState(null);
   const [currentItemId, setCurrentItemId] = useState(null);
+  const [isEligibleEditing, setIsEligibleEditing] = useState(false);
+
   const navigate = useNavigate();
 
   const { collectionId, collectionName } = useParams();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    const decoded = jwtDecode(token);
+    const actualUserId = decoded.userId;
+
+    console.log(token);
     if (token) {
       try {
+        fetchIdCollection(collectionId);
         fetchItemsCollection(collectionId); //TODO
       } catch (error) {
         console.error("Error decoding token: ", error);
@@ -68,7 +77,24 @@ function CollectionPage(){
       setError('No authentication token found.');
       setLoading(false);
     }
-  }, []);
+    if(actualUserId === collectionUserId){
+      setIsEligibleEditing(true);
+    }
+  }, [collectionUserId]);
+
+
+  const fetchIdCollection = (collectiondId) => {
+    axios.get(`http://localhost:3000/api/collection/${collectionId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+    })
+    .then(response => {
+      console.log(response.data.userId)
+      setCollectionUserId(response.data.userId)
+    })
+    .catch(error => {
+      console.error("There was an error fetching the collections: ", error);
+    });
+  }
 
   // OK
   const fetchItemsCollection = (collectionId) => {
@@ -168,10 +194,13 @@ function CollectionPage(){
                 <p>{Item.description}</p>
                 <p>{Item.image_path}</p>
                 <p>{Item.is_real ? "Réel" : "Non réel"}</p>
-                <button onClick={() => handleEditClick(Item.id)}>Modifier</button>
-                <button onClick={() => deleteItem(Item.id)}>Supprimer</button>
-                <button onClick={() => handleNaviguate(Item.name, Item.id)}>Voir les avis</button>
-
+                {isEligibleEditing && (
+                  <>
+                    <button onClick={() => handleEditClick(Item.id)}>Modifier</button>
+                    <button onClick={() => deleteItem(Item.id)}>Supprimer</button>
+                    <button onClick={() => handleNaviguate(Item.name, Item.id)}>Voir les avis</button>
+                  </>
+                )}
               </div>
             ))}
           </div>

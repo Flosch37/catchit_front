@@ -1,4 +1,83 @@
+.admin-page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 10px;
+}
+
 .admin-items{
     display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid black;
+}
+
+.admin-items p {
+    border: 1px solid rgba(0, 0, 0, 0.098);
+}
+
+.naviguate-buttons{
+    display: flex;
     gap: 5px;
+}
+
+.admin-items button {
+    max-height: 80px;
+    margin: 0px 5px;
+}
+
+.naviguate-buttons button {
+    cursor: pointer;
+    border: none;
+    font-size: 18px;
+    padding: 7px 20px;
+    background-color: rgb(15, 15, 74);
+    color: white;
+}
+
+.current-table{
+    font-weight: bold;
+}
+
+
+.add-button {
+    color: rgb(10, 113, 10);
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+.button-delete {
+    color: rgb(179, 5, 2);
+    border-radius: 15px;
+}
+
+.button-modify {
+    color: rgb(151, 151, 0);
+    border-radius: 15px;
+}
+
+.generic-form {
+   display: flex;
+   flex-direction: column;
+   border-radius: 15px;
+   background-color: rgb(245, 245, 245);
+   padding: 15px;
+   margin-bottom: 20px;
+}
+
+.generic-form label {
+    display: flex;
+    font-weight: bold;
+    gap: 5px;
+    margin: 10px 0;
+}
+
+.generic-form button[type=submit]{
+    max-width: fit-content;
+    font-weight: bold;
+    font-size: 18px;
+    padding: 7px 15px;
+    background-color: rgb(0, 156, 41);
+    color: white;
+    border-radius: 5px;
+    border-color: transparent;
 }
