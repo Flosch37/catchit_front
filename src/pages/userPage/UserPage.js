@@ -35,6 +35,7 @@ function UserPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingCollection, setEditingCollection] = useState(null);
   const navigate = useNavigate();
+  
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {

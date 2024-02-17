@@ -198,12 +198,14 @@ function CollectionPage(){
                   <>
                     <button onClick={() => handleEditClick(Item.id)}>Modifier</button>
                     <button onClick={() => deleteItem(Item.id)}>Supprimer</button>
-                    <button onClick={() => handleNaviguate(Item.name, Item.id)}>Voir les avis</button>
                   </>
                 )}
+                {/* Ce bouton est maintenant placé en dehors de la condition {isEligibleEditing} */}
+                <button onClick={() => handleNaviguate(Item.name, Item.id)}>Voir les avis</button>
               </div>
             ))}
           </div>
+
         )}
       </div>
     </div>
